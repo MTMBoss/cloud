@@ -51,7 +51,7 @@ Future<List<Map<String, dynamic>>> scrapeMaterie() async {
     (() => {
       let results = [];
       let currentMateria = {};
-      
+
       // Seleziona tutte le righe utili della griglia
       const rows = document.querySelectorAll("tr.NoCell, tr.SiCell");
       
@@ -84,9 +84,27 @@ Future<List<Map<String, dynamic>>> scrapeMaterie() async {
             if (creditSpan) {
               currentMateria["crediti"] = creditSpan.innerText.trim();
             }
+
+            // Estrazione delle ore totali
+            const oreTotaliSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_ofp"]`);
+            if (oreTotaliSpan) {
+              currentMateria["ore_totali"] = oreTotaliSpan.innerText.trim();
+            }
+
+            // Estrazione delle ore fatte
+            const oreFatteSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_of"]`);
+            if (oreFatteSpan) {
+              currentMateria["ore_fatte"] = oreFatteSpan.innerText.trim();
+            }
+          }
+
+          // Estrazione del professore
+          const profNode = row.querySelector("span[id*='cell43_12_tD']");
+          if (profNode) {
+            currentMateria["professore"] = profNode.innerText.trim();
           }
         } else {
-          // Se la riga non contiene il nome della materia, integra dati come anno e voto
+          // Se la riga non contiene la materia, integra dati come anno e voto
           const annoNode = row.querySelector("span[id*='Label4']");
           if (annoNode && !currentMateria["anno"]) {
             currentMateria["anno"] = annoNode.innerText.trim();
