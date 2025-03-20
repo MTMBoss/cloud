@@ -6,16 +6,14 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
 Future<List<Map<String, dynamic>>> scrapeMaterie() async {
-  final browser = await puppeteer.launch(
-    headless: true,
-  ); // headless: true per esecuzione in background
+  // Lancia il browser in modalità headless
+  final browser = await puppeteer.launch(headless: true);
   final page = await browser.newPage();
 
-  // Naviga alla pagina di login
+  // Naviga alla pagina di login e attendi il caricamento
   await page.goto(
     'https://servizi1.isidata.net/SSDidatticheco/Allievi/LoginAllieviRes.aspx',
   );
-
   await page.waitForSelector('#ctl00_cp1_Istituto_I', visible: true);
 
   // Seleziona l'istituto (es. "TSCO" per Trieste)
@@ -76,35 +74,38 @@ Future<List<Map<String, dynamic>>> scrapeMaterie() async {
             currentMateria["voto"] = votoNode.innerText.trim();
           }
           
-          // Estrazione dei crediti tramite mapping dell'id
+          // Estrazione dei dati in base a rowNumber
           let idMatch = materiaNode.id.match(/cell(\d+)_/);
           let rowNumber = idMatch ? idMatch[1] : null;
           if (rowNumber) {
+            // Crediti
             const creditSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_cre"]`);
             if (creditSpan) {
               currentMateria["crediti"] = creditSpan.innerText.trim();
             }
-
-            // Estrazione delle ore totali
+            // Ore totali
             const oreTotaliSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_ofp"]`);
             if (oreTotaliSpan) {
               currentMateria["ore_totali"] = oreTotaliSpan.innerText.trim();
             }
-
-            // Estrazione delle ore fatte
+            // Ore fatte
             const oreFatteSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_of"]`);
             if (oreFatteSpan) {
               currentMateria["ore_fatte"] = oreFatteSpan.innerText.trim();
             }
-          }
-
-          // Professore (mapping dinamico)
+            // Professore
             const profSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_tD"]`);
             if (profSpan) {
               currentMateria["professore"] = profSpan.innerText.trim();
             }
+            // Data esame: estrai lo span con il suffisso _de
+            const dataEsameSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_de"]`);
+            if (dataEsameSpan) {
+              currentMateria["data_esame"] = dataEsameSpan.innerText.trim();
+            }
+          }
         } else {
-          // Se la riga non contiene la materia, integra dati come anno e voto
+          // Se la riga non contiene la materia, integra dati come anno e voto, se non già presenti
           const annoNode = row.querySelector("span[id*='Label4']");
           if (annoNode && !currentMateria["anno"]) {
             currentMateria["anno"] = annoNode.innerText.trim();
@@ -116,7 +117,7 @@ Future<List<Map<String, dynamic>>> scrapeMaterie() async {
         }
       });
       
-      // Aggiungi l'ultimo oggetto se presente
+      // Aggiungi l'ultima materia se presente
       if (Object.keys(currentMateria).length !== 0) {
         results.push(currentMateria);
       }
