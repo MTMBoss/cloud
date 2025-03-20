@@ -44,7 +44,7 @@ Future<List<Map<String, dynamic>>> scrapeMaterie() async {
   // Attendi che la griglia sia caricata (almeno un elemento dei crediti è visibile)
   await page.waitForSelector("span[id*='cre']", visible: true);
 
-  // Esegui l'estrazione dei dati iterando sulle righe della griglia
+  // Estrazione dei dati iterando sulle righe della griglia
   final materie = await page.evaluate(r'''
     (() => {
       let results = [];
@@ -74,7 +74,7 @@ Future<List<Map<String, dynamic>>> scrapeMaterie() async {
             currentMateria["voto"] = votoNode.innerText.trim();
           }
           
-          // Estrazione dei dati in base a rowNumber
+          // Estrazione dei dati in base al rowNumber derivato dall'id della materia
           let idMatch = materiaNode.id.match(/cell(\d+)_/);
           let rowNumber = idMatch ? idMatch[1] : null;
           if (rowNumber) {
@@ -83,13 +83,13 @@ Future<List<Map<String, dynamic>>> scrapeMaterie() async {
             if (creditSpan) {
               currentMateria["crediti"] = creditSpan.innerText.trim();
             }
-            // Ore totali
-            const oreTotaliSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_ofp"]`);
+            // Ore totali: cerca lo span il cui id termina con '_ofp'
+            const oreTotaliSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id$="_ofp"]`);
             if (oreTotaliSpan) {
               currentMateria["ore_totali"] = oreTotaliSpan.innerText.trim();
             }
-            // Ore fatte
-            const oreFatteSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id*="_of"]`);
+            // Ore fatte: cerca lo span il cui id termina con '_of'
+            const oreFatteSpan = document.querySelector(`span[id*="cell${rowNumber}_"][id$="_of"]`);
             if (oreFatteSpan) {
               currentMateria["ore_fatte"] = oreFatteSpan.innerText.trim();
             }
